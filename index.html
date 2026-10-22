@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>L’étagère de [Ton prénom] · portfolio</title>
+    <meta name="description" content="Le portfolio de [Ton prénom] : une chambre la nuit, une vieille télé et une console 16 bits. Choisis une cartouche sur l’étagère pour découvrir qui je suis, mes projets et comment me contacter." />
+    <meta name="theme-color" content="#0d1030" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="canonical" href="%VITE_SITE_URL%/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content="L’étagère de [Ton prénom]" />
+    <meta property="og:description" content="Un portfolio à jouer : insère une cartouche dans la NOVA 16 et regarde-la s’allumer sur la télé." />
+    <meta property="og:url" content="%VITE_SITE_URL%/" />
+    <meta property="og:image" content="%VITE_SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Une télé cathodique allumée dans une chambre la nuit, une console et des cartouches." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="L’étagère de [Ton prénom]" />
+    <meta name="twitter:description" content="Un portfolio à jouer : insère une cartouche dans la NOVA 16." />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og-image.png" />
+  </head>
+  <body class="is-loading">
+    <a class="skip-link" href="#shelf">Aller directement aux cartouches</a>
+
+    <!-- Écran de chargement -->
+    <div class="intro" id="intro" role="status" aria-live="polite">
+      <div class="intro-inner">
+        <p class="intro-logo" aria-hidden="true"><span>NOVA</span><b>16</b></p>
+        <p class="intro-owner">L’étagère de <span data-owner></span></p>
+        <div class="intro-bar" aria-hidden="true"><i></i></div>
+        <p class="intro-msg" id="intro-msg">Allumage de la chambre…</p>
+        <button type="button" class="intro-skip" id="intro-skip">Entrer</button>
+      </div>
+    </div>
+
+    <!-- Barre d’options -->
+    <header class="hud" aria-label="Options">
+      <button type="button" class="hud-btn" id="btn-sound" aria-pressed="false">
+        <span class="hud-ico" aria-hidden="true">♪</span><span class="hud-txt">Son coupé</span>
+      </button>
+      <button type="button" class="hud-btn" id="btn-quality" title="Changer la qualité graphique">
+        <span class="hud-ico" aria-hidden="true">✦</span><span class="hud-txt">Qualité auto</span>
+      </button>
+    </header>
+
+    <main class="room" id="room">
+      <!-- Mur, fenêtre, poster (fond) -->
+      <div class="layer wall" data-depth="0.18" aria-hidden="true">
+        <div class="wallpaper"></div>
+        <div class="window">
+          <canvas class="sky" id="sky"></canvas>
+          <div class="window-frame"><i></i><i></i></div>
+          <div class="window-glass"></div>
+          <div class="curtain curtain-l"></div>
+          <div class="curtain curtain-r"></div>
+          <div class="sill"></div>
+        </div>
+        <div class="poster">
+          <svg viewBox="0 0 30 40" shape-rendering="crispEdges">
+            <rect width="30" height="40" fill="#1b1446" />
+            <rect y="22" width="30" height="18" fill="#2a1f63" />
+            <g fill="#fff"><rect x="3" y="4" width="1" height="1" /><rect x="24" y="7" width="1" height="1" /><rect x="9" y="11" width="1" height="1" /><rect x="27" y="15" width="1" height="1" /><rect x="5" y="17" width="1" height="1" /></g>
+            <circle cx="15" cy="17" r="7" fill="#ff8a5c" />
+            <rect x="8" y="14" width="14" height="1" fill="#ffd23f" />
+            <rect x="9" y="18" width="12" height="1" fill="#c2447a" />
+            <rect x="4" y="16" width="22" height="2" fill="#5ee1ff" opacity=".8" />
+            <rect x="0" y="30" width="30" height="1" fill="#5ee1ff" />
+            <rect x="0" y="34" width="30" height="1" fill="#5ee1ff" opacity=".5" />
+            <rect x="3" y="25" width="24" height="3" fill="#ffd23f" />
+            <rect x="4" y="26" width="22" height="1" fill="#1b1446" />
+          </svg>
+          <span class="poster-tape poster-tape-l"></span><span class="poster-tape poster-tape-r"></span>
+        </div>
+        <div class="frame-photo"><span></span></div>
+      </div>
+
+      <div class="layer floor" data-depth="0.32" aria-hidden="true"><div class="rug"></div></div>
+
+      <div class="stage">
+        <!-- Télé + meuble + console -->
+        <section class="setup layer" data-depth="0.55" aria-label="La télé ONDINE et la console NOVA 16">
+          <div class="tv-wrap">
+            <div class="antenna" aria-hidden="true"><i></i><i></i><b></b></div>
+            <div class="tv" id="tv">
+              <div class="tv-light" id="tv-light" aria-hidden="true"></div>
+              <div class="bezel">
+                <div
+                  class="screen"
+                  id="screen"
+                  tabindex="0"
+                  role="region"
+                  aria-roledescription="écran de télé"
+                  aria-label="Écran de la télé ONDINE : aucune cartouche"
+                  aria-describedby="screen-help"
+                >
+                  <canvas class="crt" id="crt" aria-hidden="true"></canvas>
+                  <div class="crt-fallback" aria-hidden="true"></div>
+                  <div class="glass" aria-hidden="true"></div>
+                  <div class="screen-a11y" id="screen-a11y"></div>
+                </div>
+              </div>
+              <div class="panel">
+                <span class="tv-brand" aria-hidden="true"><i>≈</i>ONDINE</span>
+                <span class="knob" aria-hidden="true"></span>
+                <span class="knob knob-sm" aria-hidden="true"></span>
+                <button type="button" class="zoom-btn" id="btn-zoom" aria-pressed="false" aria-label="Agrandir l’écran" title="Agrandir l’écran">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+                </button>
+                <span class="grille" aria-hidden="true"></span>
+                <span class="tv-led" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cabinet">
+            <div class="cabinet-top">
+              <div class="clock" aria-hidden="true"><span id="clock">23:47</span></div>
+              <button type="button" class="lamp" id="lamp" aria-pressed="true" aria-label="Lampe de chevet">
+                <span class="lamp-glow" aria-hidden="true"></span>
+                <span class="lamp-shade" aria-hidden="true"></span>
+                <span class="lamp-bulb" aria-hidden="true"></span>
+                <span class="lamp-stem" aria-hidden="true"></span>
+                <span class="lamp-base" aria-hidden="true"></span>
+              </button>
+            </div>
+            <div class="compartment">
+              <div class="console" id="console">
+                <div class="seat" id="seat"></div>
+                <div class="c-top">
+                  <div class="slot" id="slot"><i class="flap"></i></div>
+                  <span class="c-power" aria-hidden="true"></span>
+                </div>
+                <div class="c-front">
+                  <span class="c-logo" aria-hidden="true">NOVA<b>16</b></span>
+                  <span class="c-stripe" aria-hidden="true"></span>
+                  <span class="c-ports" aria-hidden="true"><i>1</i><i>2</i></span>
+                  <span class="c-led" aria-hidden="true"></span>
+                  <button type="button" class="eject" id="eject" disabled>Éjecter</button>
+                </div>
+              </div>
+              <div class="pad" aria-hidden="true">
+                <svg viewBox="0 0 120 56">
+                  <path d="M20 8h80c12 0 18 10 18 22s-6 22-16 22c-8 0-12-6-18-10H36c-6 4-10 10-18 10C8 52 2 42 2 30S8 8 20 8z" fill="#2b2e38" />
+                  <path d="M20 10h80c10 0 15 8 16 16H4c1-8 6-16 16-16z" fill="#363a46" />
+                  <rect x="18" y="22" width="16" height="6" rx="1" fill="#15161b" /><rect x="23" y="17" width="6" height="16" rx="1" fill="#15161b" />
+                  <circle cx="90" cy="30" r="5" fill="#e2463b" /><circle cx="102" cy="22" r="5" fill="#2ec4b6" />
+                  <rect x="50" y="28" width="8" height="3" rx="1.5" fill="#15161b" /><rect x="62" y="28" width="8" height="3" rx="1.5" fill="#15161b" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Étagère -->
+        <aside class="shelf-wrap layer" data-depth="0.7" aria-labelledby="shelf-title">
+          <h1 class="sign" id="shelf-title">L’étagère de <span data-owner></span></h1>
+          <p class="hint" id="cart-help">Clique sur une cartouche ou glisse-la jusqu’à la console.</p>
+          <ul class="shelf" id="shelf" aria-label="Cartouches"></ul>
+          <p class="shelf-caption" id="shelf-caption" aria-hidden="true"></p>
+        </aside>
+      </div>
+
+      <div class="layer fg" data-depth="1.2" aria-hidden="true">
+        <svg class="fg-plant" viewBox="0 0 200 260">
+          <defs><filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" /></filter></defs>
+          <g filter="url(#blur)" fill="#06070f">
+            <path d="M40 260C60 200 50 150 20 110c30 20 50 60 52 150z" />
+            <path d="M70 260c0-70 30-120 80-150-30 40-50 90-56 150z" />
+            <path d="M60 260C40 190 0 170-10 160c40 0 70 40 80 100z" />
+            <path d="M80 260c20-50 60-70 110-70-40 15-70 40-90 70z" />
+            <path d="M55 260c5-90-5-160-30-220 30 50 50 120 45 220z" />
+          </g>
+        </svg>
+      </div>
+    </main>
+
+    <canvas class="dust" id="dust" aria-hidden="true"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="fly-layer" id="fly-layer" aria-hidden="true"></div>
+
+    <p class="sr-only" id="screen-help">
+      Utilise les flèches pour naviguer, Entrée pour valider, Retour arrière pour revenir à l’écran titre et Échap pour éjecter la cartouche.
+    </p>
+    <p class="sr-only" id="sr-status" aria-live="polite"></p>
+
+    <noscript>
+      <div class="noscript">Ce portfolio a besoin de JavaScript pour allumer la télé. Active-le pour jouer !</div>
+    </noscript>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
