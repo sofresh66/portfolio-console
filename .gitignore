@@ -1,0 +1,28 @@
+# dépendances et build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# secrets : ne jamais versionner
+.env.local
+.env.*.local
+.env.production
+*.pem
+*.key
+
+# outils de déploiement
+.vercel/
+.netlify/
+.wrangler/
+
+# journaux et système
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
