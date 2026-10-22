@@ -230,7 +230,8 @@ export class Sound {
       hp.frequency.value = 400;
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.09, t + 1.2);
+      // arrivée progressive et volume discret : un fond d’ambiance, pas une averse
+      g.gain.setTargetAtTime(0.03, t, 1.2);
       s.connect(lp).connect(hp).connect(g).connect(this.sfxBus);
       s.start();
       this.rainNode = { s, g };
