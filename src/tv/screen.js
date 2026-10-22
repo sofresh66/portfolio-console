@@ -1,7 +1,7 @@
 /* Rendu des écrans de jeu de la NOVA 16 dans un canvas 2D basse résolution.
    Ce canvas sert ensuite de texture au shader CRT de la télé (crt.js). */
 import {
-  FONT_PIXEL, FONT_CRT, drawMotif, drawAvatar, AVATAR_SIZE, wrapText, shadowText, sanitize, mix,
+  FONT_PIXEL, FONT_CRT, drawMotif, drawAvatar, AVATAR_SIZE, wrapText, shadowText, sanitize, mix, upper,
 } from "./pixel.js";
 
 const HUD_H = 16;
@@ -465,7 +465,7 @@ export class GameScreen {
     }
     if (t > 1.0 || this.reduce) {
       ctx.font = `8px ${FONT_PIXEL}`;
-      const s = "SYSTÈME 16 BITS";
+      const s = "SYSTEME 16 BITS";
       ctx.fillStyle = "#8a93b8";
       ctx.fillText(s, Math.round((W - ctx.measureText(s).width) / 2), baseY + 44);
       ctx.font = `${this.body}px ${FONT_CRT}`;
@@ -485,7 +485,7 @@ export class GameScreen {
     ctx.fillRect(0, H * 0.18, W, 2);
     ctx.fillRect(0, H * 0.18 + 62, W, 2);
     ctx.font = `16px ${FONT_PIXEL}`;
-    const title = sanitize(c.title).toUpperCase();
+    const title = upper(c.title);
     const lines = wrapText(ctx, title, W - 24);
     const wob = this.reduce ? 0 : Math.round(Math.sin(t * 2.2) * 2);
     lines.slice(0, 2).forEach((l, i) => {
@@ -507,7 +507,7 @@ export class GameScreen {
     // « Appuie sur Start »
     const blinkOn = this.reduce || Math.floor(t * 2.2) % 2 === 0;
     ctx.font = `8px ${FONT_PIXEL}`;
-    const ps = this.touch ? "TOUCHE L'ÉCRAN" : "APPUIE SUR START";
+    const ps = this.touch ? "TOUCHE L'ECRAN" : "APPUIE SUR START";
     const pw = ctx.measureText(ps).width;
     ctx.fillStyle = "rgba(0,0,0,.65)";
     ctx.fillRect(Math.round((W - pw) / 2) - 10, Math.round(H * 0.74) - 7, pw + 20, 22);
@@ -555,7 +555,7 @@ export class GameScreen {
     ctx.fillStyle = p.fg;
     ctx.fillText("1P", 6, 4);
     ctx.fillStyle = p.accent;
-    const ttl = sanitize(c.title).toUpperCase();
+    const ttl = upper(c.title);
     ctx.fillText(ttl, 30, 4);
     for (let i = 0; i < 3; i++) heart(ctx, W - 14 - i * 12, 4, i === 2 && Math.floor(t * 1.5) % 2 ? "#7a2030" : "#ff4d6d");
 
@@ -608,7 +608,7 @@ export class GameScreen {
         ctx.font = `8px ${FONT_PIXEL}`;
         tri(ctx, 0, y + 1, p.accent, 0);
         ctx.fillStyle = mix(p.fg, p.accent, 0.4);
-        ctx.fillText(it.text.toUpperCase(), 12, y);
+        ctx.fillText(upper(it.text), 12, y);
         break;
       }
       case "text":

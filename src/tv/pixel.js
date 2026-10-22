@@ -243,3 +243,9 @@ export function shadowText(ctx, text, x, y, color, shadow, d = 2) {
 export function sanitize(text) {
   return String(text).replace(/[’‘]/g, "'").replace(/[“”]/g, '"').replace(/…/g, "...");
 }
+
+/* Majuscules sans accents : la police pixel n’a pas de capitales accentuées
+   (comme sur les vraies consoles de l’époque). */
+export function upper(text) {
+  return sanitize(text).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
