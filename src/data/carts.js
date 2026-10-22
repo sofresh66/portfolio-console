@@ -48,7 +48,7 @@ export const CARTS = [
       {
         type: "stats",
         items: [
-          ["Classe", "Créateur·rice du web"],
+          ["Classe", "Créateur du web"],
           ["Niveau", "8 ans d’expérience"],
           ["Arme", "Ma tête"],
         ],
