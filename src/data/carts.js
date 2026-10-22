@@ -191,9 +191,8 @@ export const CARTS = [
       {
         type: "links",
         items: [
-          { label: "toi@exemple.fr", href: "mailto:toi@exemple.fr" },
-          { label: "GitHub", href: "https://github.com/" },
-          { label: "Instagram", href: "https://instagram.com/" },
+          { label: "elharchdenis@gmail.com", href: "mailto:elharchdenis@gmail.com" },
+          { label: "GitHub", href: "https://github.com/sofresh66" },
         ],
       },
     ],
