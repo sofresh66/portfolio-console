@@ -21,6 +21,7 @@
      { type: "stats",  items: [["Clé", "Valeur"], …] } fiche de personnage
      { type: "bars",   items: [["Code", 0.7], …] }     jauges (0 à 1)
      { type: "tags",   items: ["HTML", "CSS"] }        étiquettes
+     { type: "list",   items: ["…", ["Intitulé", "…"]] } liste à puces (intitulé facultatif)
      { type: "image",  src: "/images/capture.png", alt: "…" }  capture (rendue en pixels)
      { type: "link",   label: "Voir le projet", href: "https://…" }
      { type: "links",  items: [{ label: "…", href: "…" }, …] }
@@ -115,21 +116,64 @@ export const CARTS = [
   },
   {
     id: "projet-2",
-    title: "Projet n°2",
-    subtitle: "[Nom du projet 2]",
+    title: "Mimo",
+    subtitle: "Compagnon virtuel familial",
     color: "#2e9e62",
     motif: "damier",
     palette: { bg: "#10331f", fg: "#eaffea", accent: "#8cff7a", art: ["#8cff7a", "#1f6b3a", "#0b2615"] },
     music: { root: 55, tempo: 138 },
     blocks: [
-      { type: "title", text: "[Nom du projet 2]" },
+      { type: "title", text: "Mimo" },
       {
         type: "text",
-        text: "Sorti en [année]. Un deuxième projet dont tu es fier ou fière : raconte l’idée, montre une capture, mets le lien.",
+        text: "Un compagnon virtuel bienveillant pour toute la famille. Mimo est une application web installable (PWA) où chaque enfant élève une petite créature qui grandit grâce aux activités du jeu et aux missions du quotidien validées par les parents. Les grands-parents peuvent aussi jouer.",
       },
-      { type: "heading", text: "Fait avec" },
-      { type: "tags", items: ["[Outil]", "[Outil]"] },
-      { type: "link", label: "Voir le projet", href: "https://example.com" },
+      { type: "heading", text: "Ce que fait l’application" },
+      {
+        type: "list",
+        items: [
+          ["Compagnon virtuel", "Adoption d’un œuf, éclosion puis évolution de la créature. Elle gagne de l’XP dans 6 domaines (logique, créativité, lecture, aventure, entraide, sport) et compte plus de 50 formes d’évolution."],
+          ["Missions du quotidien", "Le parent crée des missions (ranger sa chambre, lire…), l’enfant les déclare faites et le parent les valide en temps réel."],
+          ["Exploration et collection", "Expéditions dans 6 zones, butin, inventaire, cuisine avec recettes secrètes, encyclopédie des créatures."],
+          ["Monde vivant", "Amitiés entre les créatures de la famille, visites et espace personnalisable à décorer au doigt."],
+          ["Village familial", "Missions coopératives : toute la famille progresse ensemble, sans classement entre frères et sœurs."],
+          ["Boîte aux lettres familiale", "Lettres personnalisées entre membres d’une même famille, avec papiers à lettres à débloquer, notifications en temps réel et lettres « souvenirs »."],
+          ["Espace parent protégé par PIN", "Tableau de bord, validation des missions, récompenses, supervision du courrier des enfants, invitation d’un second parent ou d’un grand-parent joueur."],
+        ],
+      },
+      { type: "heading", text: "Principes de conception" },
+      {
+        type: "list",
+        items: [
+          ["Pensé pour les enfants", "La créature ne meurt jamais, ne tombe jamais malade et ne culpabilise jamais l’enfant. Ni publicité, ni traceur, ni profil public, ni contact avec des inconnus, ni achat intégré."],
+          ["Vie privée", "Les enfants n’ont pas d’e-mail, seulement un prénom, un avatar et un code PIN. Les échanges restent strictement limités à la famille."],
+          ["Mobile d’abord", "Interface testée de 375 à 1440 px, accessible, qui respecte la préférence « animations réduites »."],
+        ],
+      },
+      { type: "heading", text: "Stack technique" },
+      {
+        type: "stats",
+        items: [
+          ["Frontend", "Next.js 16, React 19, TypeScript, Tailwind CSS 4, Motion (animations), TanStack Query, PWA"],
+          ["Backend", "NestJS 11, Prisma 6, PostgreSQL, Redis, BullMQ (tâches différées), Socket.IO (temps réel)"],
+          ["Moteur", "Python, FastAPI, Pydantic (compagnon et recommandations)"],
+          ["Monorepo", "pnpm workspaces, Turborepo, packages partagés (types, game-data, ui, config)"],
+          ["Qualité", "TypeScript strict, ESLint, Prettier ; Jest, Vitest et Pytest ; Playwright pour les tests de bout en bout"],
+          ["Déploiement", "API sur Render, base PostgreSQL sur Neon, front sur Vercel"],
+        ],
+      },
+      { type: "heading", text: "Points techniques" },
+      {
+        type: "list",
+        items: [
+          ["Serveur seul juge", "XP, niveaux, récompenses, inventaire et évolutions sont calculés et validés uniquement par l’API. Le client ne peut jamais s’attribuer un gain."],
+          ["Sécurité et autorisations", "Sessions en cookies HttpOnly, modes de session (appareil, parent, enfant, adulte joueur) vérifiés en base à chaque requête, isolation stricte entre familles, rate limiting."],
+          ["Robustesse", "Transactions protégées contre la concurrence et les requêtes rejouées (idempotence), migrations de base uniquement additives et compatibles avec les données existantes."],
+          ["Temps réel", "Événements Socket.IO légers, émis uniquement après l’écriture en base, dans des salles autorisées côté serveur."],
+          ["Contenu de jeu en données", "Espèces, objets, zones et événements sont décrits en JSON versionné, validés automatiquement puis synchronisés en base à chaque déploiement."],
+          ["Tests", "Environ 115 tests d’API, des tests unitaires de règles de jeu et 48 parcours Playwright sur mobile et desktop."],
+        ],
+      },
     ],
   },
   {

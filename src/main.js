@@ -160,6 +160,14 @@ function buildMirror(cart) {
     } else if (b.type === "tags") {
       const ul = add("ul");
       b.items.forEach((t) => ul.appendChild(Object.assign(document.createElement("li"), { textContent: t })));
+    } else if (b.type === "list") {
+      const ul = add("ul");
+      b.items.forEach((entry) => {
+        const li = ul.appendChild(document.createElement("li"));
+        const [label, text] = Array.isArray(entry) ? entry : [null, entry];
+        if (label) li.appendChild(Object.assign(document.createElement("strong"), { textContent: label + " : " }));
+        li.appendChild(document.createTextNode(text));
+      });
     } else if (b.type === "image") add("p", b.alt ? `Image : ${b.alt}` : "Image");
     else if (b.type === "countdown") add("p", `Compte à rebours de ${b.from ?? 9} à 0.`);
     else if (b.type === "link") addLink(add("p"), b.label, b.href);

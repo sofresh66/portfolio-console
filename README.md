@@ -48,7 +48,7 @@ Chaque objet du tableau `CARTS` est une cartouche de l’étagère. Tu n’as ri
 ```
 
 Types de blocs disponibles : `title`, `heading`, `text`, `hero` (avatar + texte), `stats`,
-`bars` (jauges de 0 à 1), `tags`, `image`, `link`, `links`, `countdown`. La liste complète, avec un
+`bars` (jauges de 0 à 1), `tags`, `list` (liste à puces), `image`, `link`, `links`, `countdown`. La liste complète, avec un
 exemple pour chacun, est en tête de `src/data/carts.js`.
 
 - Ajouter une cartouche : copie un objet du tableau, change son `id`. Elle apparaît sur l’étagère.

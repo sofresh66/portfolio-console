@@ -152,6 +152,19 @@ export class GameScreen {
           push({ type: "stats", rows, kw, h, chars: rows.reduce((s, r) => s + r.k.length + r.lines.join(" ").length, 0) });
           break;
         }
+        case "list": {
+          // chaque élément : "texte" ou ["Intitulé", "texte"]
+          ctx.font = `${this.body}px ${FONT_CRT}`;
+          const ind = 14;
+          const rows = b.items.map((entry) => {
+            const [label, text] = Array.isArray(entry) ? entry : [null, entry];
+            return { label: label ? sanitize(label) : null, lines: wrapText(ctx, sanitize(text), inner - ind) };
+          });
+          const h = rows.reduce((s, r) => s + (r.label ? this.lh : 0) + r.lines.length * this.lh + 6, 0) + 2;
+          const chars = rows.reduce((s, r) => s + (r.label ? r.label.length : 0) + r.lines.join(" ").length, 0);
+          push({ type: "list", rows, ind, h, chars });
+          break;
+        }
         case "bars": {
           ctx.font = `${this.body}px ${FONT_CRT}`;
           const lw = Math.max(...b.items.map(([k]) => ctx.measureText(sanitize(k)).width)) + 12;
@@ -357,7 +370,9 @@ export class GameScreen {
     } else if (this.state === "content") {
       if (this.reveal < this.totalChars && !this.trans) {
         const before = Math.floor(this.reveal);
-        this.reveal = Math.min(this.totalChars, this.reveal + dt * CHARS_PER_SEC);
+        // les longs écrans s’écrivent plus vite (15 s au maximum)
+        const speed = Math.max(CHARS_PER_SEC, this.totalChars / 15);
+        this.reveal = Math.min(this.totalChars, this.reveal + dt * speed);
         if (Math.floor(this.reveal / 3) !== Math.floor(before / 3)) this.sound.type();
         if (!this.userScrolled) {
           const cur = this.items.find((it) => this.reveal >= it.start && this.reveal < it.start + it.chars);
@@ -633,6 +648,24 @@ export class GameScreen {
           this.drawLines(r.lines, it.kw, yy, Math.max(0, left), p.fg);
           left -= r.lines.join(" ").length;
           yy += r.lines.length * lh;
+        }
+        break;
+      }
+      case "list": {
+        let yy = y, left = shown;
+        for (const r of it.rows) {
+          if (left <= 0) break;
+          tri(ctx, 2, yy + lh / 2 - 4, p.accent, 0);
+          if (r.label) {
+            ctx.font = `${this.body}px ${FONT_CRT}`;
+            ctx.fillStyle = p.accent;
+            ctx.fillText(r.label.slice(0, Math.max(0, left)), it.ind, yy);
+            left -= r.label.length;
+            yy += lh;
+          }
+          this.drawLines(r.lines, it.ind, yy, Math.max(0, left), p.fg);
+          left -= r.lines.join(" ").length;
+          yy += r.lines.length * lh + 6;
         }
         break;
       }
