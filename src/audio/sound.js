@@ -204,9 +204,9 @@ export class Sound {
     this.tone({ type: "sine", freq: 900, to: 160, dur: 0.9, vol: 0.05 });
   }
   thunder() {
-    this.noise({ dur: 2.6, vol: 0.5, freq: 140, q: 0.7, type: "lowpass" });
-    this.noise({ dur: 0.5, vol: 0.25, freq: 900, q: 0.8, type: "lowpass", at: 0.05 });
-    this.tone({ type: "sine", freq: 55, to: 38, dur: 2.2, vol: 0.25, at: 0.1 });
+    this.noise({ dur: 2.6, vol: 0.25, freq: 140, q: 0.7, type: "lowpass" });
+    this.noise({ dur: 0.5, vol: 0.12, freq: 900, q: 0.8, type: "lowpass", at: 0.05 });
+    this.tone({ type: "sine", freq: 55, to: 38, dur: 2.2, vol: 0.12, at: 0.1 });
   }
   crackle() {
     this.noise({ dur: 0.03 + Math.random() * 0.04, vol: 0.25, freq: 2500 + Math.random() * 2000, q: 3 });
@@ -231,7 +231,7 @@ export class Sound {
       const g = this.ctx.createGain();
       g.gain.setValueAtTime(0.0001, t);
       // arrivée progressive et volume discret : un fond d’ambiance, pas une averse
-      g.gain.setTargetAtTime(0.03, t, 1.2);
+      g.gain.setTargetAtTime(0.014, t, 1.4);
       s.connect(lp).connect(hp).connect(g).connect(this.sfxBus);
       s.start();
       this.rainNode = { s, g };
