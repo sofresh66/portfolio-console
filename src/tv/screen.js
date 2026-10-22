@@ -65,6 +65,20 @@ export class GameScreen {
     this.onState(this.state);
   }
 
+  /* Aperçu d’une cartouche sans l’insérer : son écran titre animé.
+     mode "demo" (mode démo de la console) ou "hover" (survol sur l’étagère). */
+  showPreview(cart, mode) {
+    this.cart = cart;
+    this.state = "preview";
+    this.previewMode = mode;
+    this.items = [];
+    this.sels = [];
+    this.stateT = 0;
+    this.trans = null;
+    this.flash = 0;
+    this.onState(this.state);
+  }
+
   clear() {
     this.cart = null;
     this.state = "idle";
@@ -417,7 +431,7 @@ export class GameScreen {
       return;
     }
     if (this.state === "boot") this.drawBoot();
-    else if (this.state === "title") this.drawTitle();
+    else if (this.state === "title" || this.state === "preview") this.drawTitle();
     else this.drawContent();
 
     // Transition « mosaïque » façon 16 bits
@@ -523,17 +537,19 @@ export class GameScreen {
       ctx.fillStyle = p.fg;
       ctx.fillText(s, Math.round((W - sw) / 2), Math.round(H * 0.18 + 72));
     }
-    // « Appuie sur Start »
+    // « Appuie sur Start » (ou l’invitation de l’aperçu au survol)
+    const hover = this.state === "preview" && this.previewMode === "hover";
+    const demo = this.state === "preview" && this.previewMode === "demo";
     const blinkOn = this.reduce || Math.floor(t * 2.2) % 2 === 0;
     ctx.font = `8px ${FONT_PIXEL}`;
-    const ps = this.touch ? "TOUCHE L'ECRAN" : "APPUIE SUR START";
+    const ps = hover ? "CLIQUE POUR JOUER" : this.touch ? "TOUCHE L'ECRAN" : "APPUIE SUR START";
     const pw = ctx.measureText(ps).width;
     ctx.fillStyle = "rgba(0,0,0,.65)";
     ctx.fillRect(Math.round((W - pw) / 2) - 10, Math.round(H * 0.74) - 7, pw + 20, 22);
     if (blinkOn) shadowText(ctx, ps, Math.round((W - pw) / 2), Math.round(H * 0.74), "#ffffff", "#000000", 1);
-    if (!this.touch) {
+    if (!this.touch && !hover) {
       ctx.font = `${this.body - 4}px ${FONT_CRT}`;
-      const k = "(Entrée ou clic)";
+      const k = demo ? "(Entrée pour jouer)" : "(Entrée ou clic)";
       ctx.fillStyle = "rgba(255,255,255,.8)";
       ctx.fillText(k, Math.round((W - ctx.measureText(k).width) / 2), Math.round(H * 0.74) + 20);
     }
@@ -541,6 +557,15 @@ export class GameScreen {
     const cr = "NOVA 16";
     ctx.fillStyle = "rgba(255,255,255,.55)";
     ctx.fillText(cr, Math.round((W - ctx.measureText(cr).width) / 2), H - 14);
+    // badge « DÉMO » des bornes d’arcade
+    if (demo) {
+      ctx.fillStyle = "rgba(0,0,0,.7)";
+      ctx.fillRect(8, 8, 52, 18);
+      ctx.fillStyle = blinkOn ? "#ff4d6d" : "#7a2030";
+      ctx.fillRect(13, 14, 6, 6);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("DEMO", 23, 13);
+    }
   }
 
   drawContent() {

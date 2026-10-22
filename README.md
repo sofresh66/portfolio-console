@@ -109,6 +109,15 @@ balises de partage (Open Graph) et à l’URL canonique.
   puis la caméra glisse vers le meuble. Bouton « Passer l’intro ». Elle ne se rejoue pas ensuite
   (mémorisé dans le navigateur) ; ajoute `?intro` à l’adresse pour la revoir.
 
+### Mode démo et aperçus
+
+- **Aperçu au survol** : survoler (ou atteindre au clavier) une cartouche affiche son écran titre
+  sur la télé après un petit zapping. Quitter la cartouche rend la neige. Rien sur mobile.
+- **Mode démo** : sans cartouche et sans aucun geste pendant 15 s, la télé fait défiler les
+  cartouches (4 s chacune, parasites entre deux, badge « DEMO », voyant de la console qui respire).
+  `Entrée` insère la cartouche affichée ; le moindre geste arrête la démo. Désactivé avec
+  « animations réduites » (les aperçus passent alors en simple fondu).
+
 ### Performance
 
 - Mode **léger automatique** sur mobile et petites machines (et bascule automatique si l’animation

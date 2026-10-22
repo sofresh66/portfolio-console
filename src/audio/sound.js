@@ -193,6 +193,11 @@ export class Sound {
   hiss(dur = 1.4) {
     this.noise({ dur, vol: 0.05, freq: 6000, q: 0.3, type: "highpass" });
   }
+  zap() {
+    // changement de chaîne : grésillement bref + petit clic
+    this.noise({ dur: 0.12, vol: 0.06, freq: 3500, q: 0.6 });
+    this.tone({ type: "square", freq: 1500, to: 700, dur: 0.05, vol: 0.025 });
+  }
   dive() {
     if (!this.ready) return;
     this.whoosh();

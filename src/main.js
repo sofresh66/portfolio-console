@@ -207,13 +207,23 @@ for (const [id, btn] of buttons) {
   const show = () => {
     if (el.caption) el.caption.textContent = `▶ ${cart.title}`;
   };
-  btn.addEventListener("pointerenter", () => {
+  btn.addEventListener("pointerenter", (e) => {
     show();
     if (!touch) sound.hover();
+    if (e.pointerType === "mouse") hoverPreview(cart);
   });
-  btn.addEventListener("focus", show);
-  btn.addEventListener("pointerleave", () => el.caption && (el.caption.textContent = ""));
-  btn.addEventListener("blur", () => el.caption && (el.caption.textContent = ""));
+  btn.addEventListener("focus", () => {
+    show();
+    if (lastInput === "key") hoverPreview(cart);
+  });
+  btn.addEventListener("pointerleave", (e) => {
+    if (el.caption) el.caption.textContent = "";
+    if (e.pointerType === "mouse") hoverEnd();
+  });
+  btn.addEventListener("blur", () => {
+    if (el.caption) el.caption.textContent = "";
+    hoverEnd();
+  });
   enableDrag(btn, mover, {
     canStart: () => !busy && current !== id,
     onStart: (b) => {
@@ -259,6 +269,9 @@ async function insert(id, ghost = null) {
   if (!cart || !btn) return;
   busy = true;
   sound.unlock();
+  stopDemo(true);
+  clearTimeout(hoverHideT);
+  previewCart = null;
   if (current) await doEject(false);
 
   if (!ghost) {
@@ -439,6 +452,14 @@ el.screen.addEventListener("wheel", (e) => {
 const pads = new Gamepads((action) => {
   lastInput = "pad";
   sound.unlock();
+  lastActivity = performance.now();
+  if (demo) {
+    const c = demo.cart;
+    stopDemo(true);
+    if (action === "a" || action === "start") insert(c.id);
+    else zapTo(null);
+    return;
+  }
   if (current) {
     if (action === "select") eject();
     else screen.input(action);
@@ -451,6 +472,109 @@ const pads = new Gamepads((action) => {
   else if ((action === "a" || action === "start") && i >= 0) insert(list[i].dataset.id);
   else if (i < 0) list[0]?.focus();
 });
+
+/* ---------------- Aperçus : survol et mode démo ----------------
+   Sans cartouche, la télé montre l’écran titre d’une cartouche survolée
+   (après un petit zapping), ou fait défiler toutes les cartouches quand
+   personne ne touche à rien depuis 15 s, comme une borne en démo.
+   Hors démo, rien ne tourne : une simple comparaison par image. */
+const DEMO_DELAY = 15000, DEMO_SLIDE = 4000;
+let previewCart = null, hoverHideT = 0, demo = null;
+let lastActivity = performance.now();
+
+function canPreview() {
+  return !current && !busy && !cinematic && dive === "room" && crt.power > 0.99;
+}
+
+/* Zapping vers l’aperçu de `cart` (ou retour à la neige si null). */
+async function zapTo(cart, mode) {
+  previewCart = cart;
+  el.screen.setAttribute("aria-label", cart ? `Écran de la télé ONDINE : aperçu de « ${cart.title} »` : "Écran de la télé ONDINE : aucune cartouche");
+  if (reduce) {
+    // mouvement réduit : simple fondu
+    if (cart) screen.showPreview(cart, mode);
+    await frames(300, (k) => {
+      if (previewCart === cart && !current) crt.snow = cart ? Math.min(crt.snow, 1 - k) : Math.max(crt.snow, k);
+    });
+    if (!cart && previewCart === null && !current) screen.clear();
+    return;
+  }
+  sound.zap();
+  await frames(90, (k) => {
+    if (current) return;
+    crt.snow = Math.max(crt.snow, k);
+    crt.roll = k * 0.5;
+  });
+  if (previewCart !== cart || current) return; // remplacé entre-temps
+  if (cart) screen.showPreview(cart, mode);
+  else screen.clear();
+  await frames(cart ? 260 : 120, (k) => {
+    if (previewCart !== cart || current) return;
+    if (cart) crt.snow = 1 - k;
+    crt.roll = (1 - k) * 0.5;
+  });
+  if (previewCart === cart && !current) {
+    crt.snow = cart ? 0 : 1;
+    crt.roll = 0;
+  }
+}
+
+function hoverPreview(cart) {
+  clearTimeout(hoverHideT);
+  stopDemo(true);
+  if (!canPreview() || (previewCart === cart && screen.state === "preview")) return;
+  zapTo(cart, "hover");
+}
+function hoverEnd() {
+  clearTimeout(hoverHideT);
+  // petit délai : passer d’une cartouche à sa voisine ne repasse pas par la neige
+  hoverHideT = setTimeout(() => {
+    if (previewCart && !demo && !current) zapTo(null);
+  }, 160);
+}
+
+function startDemo() {
+  demo = { i: 0, cart: CARTS[0], next: performance.now() + DEMO_SLIDE };
+  el.console.classList.add("demo");
+  zapTo(demo.cart, "demo");
+}
+function stopDemo(keepPreview = false) {
+  if (!demo) return;
+  demo = null;
+  el.console.classList.remove("demo");
+  if (!keepPreview && !current) zapTo(null);
+}
+function tickDemo(now) {
+  if (!demo) {
+    if (!reduce && now - lastActivity > DEMO_DELAY && canPreview() && !previewCart && document.visibilityState === "visible") startDemo();
+    return;
+  }
+  if (now < demo.next) return;
+  demo.i = (demo.i + 1) % CARTS.length;
+  demo.cart = CARTS[demo.i];
+  demo.next = now + DEMO_SLIDE;
+  zapTo(demo.cart, "demo");
+}
+
+// Entrée (ou Espace) pendant la démo : on insère la cartouche à l’écran
+addEventListener("keydown", (e) => {
+  if (!demo || (e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  const c = demo.cart;
+  stopDemo(true);
+  insert(c.id);
+}, { capture: true });
+// le moindre geste arrête la démo (un survol de cartouche garde l’aperçu)
+function noteActivity(e) {
+  lastActivity = performance.now();
+  if (!demo) return;
+  const onCart = e && e.target && e.target.closest && e.target.closest(".shelf .cart");
+  stopDemo(!!onCart);
+}
+for (const ev of ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"]) {
+  addEventListener(ev, noteActivity, { capture: true, passive: true });
+}
 
 /* ---------------- Plongée dans l’écran ----------------
    La caméra avance vers la télé jusqu’à ce que l’écran couvre la fenêtre,
@@ -576,12 +700,13 @@ const probeCtx = probe.getContext("2d", { willReadFrequently: true });
 let tvColor = SNOW_RGB, tvLevel = 0, screenLum = 0.5, sampleAcc = 0;
 let darkOverride = null, lastDark = "", lastRgb = "";
 function sampleScreen() {
-  if (!current || crt.snow > 0.5) {
+  const shown = current || previewCart;
+  if (!shown || crt.snow > 0.5) {
     tvColor = SNOW_RGB;
     screenLum = 0.5;
     return;
   }
-  tvColor = hexToRgb(current.palette.accent);
+  tvColor = hexToRgb(shown.palette.accent);
   probeCtx.drawImage(screen.canvas, 0, 0, 8, 6);
   const d = probeCtx.getImageData(0, 0, 8, 6).data;
   let sum = 0;
@@ -590,7 +715,7 @@ function sampleScreen() {
 }
 
 function updateLight(t) {
-  const snow = !current || crt.snow > 0.5;
+  const snow = !(current || previewCart) || crt.snow > 0.5;
   const base = snow ? 0.4 : 0.6 + screenLum * 0.7;
   // scintillement : ondulation lente + petites chutes brèves comme un vrai tube
   const flicker = reduce ? 1 : 0.94 + 0.06 * Math.sin(t * 13.7) * Math.sin(t * 7.3) - (Math.random() < 0.04 ? 0.1 : 0);
@@ -626,6 +751,7 @@ function frame(now) {
   slowProbe(raw);
   if (dive === "room" && !document.body.classList.contains("camera-moving")) parallax.update(dt);
   pads.poll();
+  tickDemo(now);
   sky.update(dt);
 
   if (screenVisible) {
@@ -749,6 +875,7 @@ async function playCinematic(revealRoom) {
   busy = false;
   skipCinematic = () => {};
   await tvToSnow();
+  lastActivity = performance.now();
 }
 
 /* ---------------- Démarrage ---------------- */
@@ -805,8 +932,9 @@ async function boot() {
   finishLoading();
   await new Promise((r) => setTimeout(r, reduce ? 0 : 500));
   await tvToSnow();
+  lastActivity = performance.now();
   if (buttons.has(id)) insert(id);
 }
 boot();
 
-if (import.meta.env.DEV) window.__nova = { screen, crt, mover, sound, parallax, camera, sky, get dive() { return dive; }, get cinematic() { return cinematic; } };
+if (import.meta.env.DEV) window.__nova = { screen, crt, mover, sound, parallax, camera, sky, get dive() { return dive; }, get demo() { return demo; }, get previewCart() { return previewCart; }, get cinematic() { return cinematic; } };

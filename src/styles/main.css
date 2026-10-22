@@ -948,6 +948,16 @@ button {
   background: #4a1b1b;
   transition: background 0.2s, box-shadow 0.2s;
 }
+/* mode démo : le voyant respire doucement */
+.console.demo .c-led {
+  animation: ledPulse 1.8s ease-in-out infinite;
+}
+@keyframes ledPulse {
+  50% {
+    background: #4dff8a;
+    box-shadow: 0 0 10px #4dff8a;
+  }
+}
 .console.powered .c-led {
   background: #4dff8a;
   box-shadow: 0 0 10px #4dff8a;
