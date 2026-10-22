@@ -14,11 +14,20 @@ export class Sound {
     try {
       this.enabled = localStorage.getItem(STORE_KEY) === "1";
     } catch {}
+    // page en arrière-plan (autre appli, onglet masqué, écran verrouillé) : silence total,
+    // la musique reprend là où elle s’était arrêtée au retour
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") this.ctx?.suspend();
+      else if (this.enabled) this.ctx?.resume();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    addEventListener("pagehide", () => this.ctx?.suspend());
+    addEventListener("pageshow", onVisibility);
   }
 
   /* Doit être appelé depuis un geste utilisateur (clic, touche). */
   unlock() {
-    if (!this.enabled) return;
+    if (!this.enabled || document.visibilityState === "hidden") return;
     if (!this.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
