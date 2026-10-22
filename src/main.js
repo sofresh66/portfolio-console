@@ -257,7 +257,8 @@ async function insert(id, ghost = null) {
     void el.console.offsetWidth;
     el.console.classList.add("shake", "powered");
     if (force > 0.4) el.tv.classList.add("jolt");
-    if (navigator.vibrate && touch) navigator.vibrate(18);
+    // vibration seulement après un vrai geste (sinon le navigateur la bloque)
+    if (navigator.vibrate && touch && navigator.userActivation?.hasBeenActive) navigator.vibrate(18);
   });
 
   current = cart;
