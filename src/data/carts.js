@@ -157,4 +157,4 @@ export const CARTS = [
 ];
 
 /* Ton prénom, utilisé sur l’enseigne de l’étagère et dans l’intro. */
-export const OWNER = "[Ton prénom]";
+export const OWNER = "Denis";

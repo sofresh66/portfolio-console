@@ -1,4 +1,4 @@
-# L’étagère de [Ton prénom]
+# L’étagère de Denis
 
 Un portfolio à jouer. Une chambre d’ado des années 90, la nuit : une télé cathodique **ONDINE**
 posée sur un meuble, une console 16 bits **NOVA 16** rangée dessous, et une étagère de cartouches.
@@ -55,10 +55,10 @@ exemple pour chacun, est en tête de `src/data/carts.js`.
 - Retirer une cartouche : supprime son objet.
 - Changer l’ordre : déplace les objets dans le tableau (les touches 1 à 9 suivent cet ordre).
 - Images : dépose-les dans `public/images/` et utilise `src: "/images/mon-image.png"`.
-- Ton prénom : remplace `[Ton prénom]` dans `OWNER` (bas de `carts.js`), dans `index.html`
-  (titre et balises de partage) et dans ce README.
+- Prénom affiché : `OWNER` (bas de `carts.js`) pour l’enseigne et l’intro, et `index.html`
+  pour le titre de l’onglet et les balises de partage.
 
-Les textes entre crochets (`[Ton prénom]`, `[ta ville]`…) sont à remplacer par les tiens.
+Les textes entre crochets (`[ton outil préféré]`…) sont à remplacer par les tiens.
 
 ## Redéployer
 
