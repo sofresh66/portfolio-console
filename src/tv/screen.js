@@ -28,18 +28,22 @@ export class GameScreen {
     this.setSize(400);
   }
 
-  setSize(W) {
+  /* Taille du jeu en pixels. Sans H : format 4:3 de la télé ; en plongée plein
+     écran, H suit le format de la fenêtre (16:9, portrait…). */
+  setSize(W, H) {
     W = Math.round(W);
-    if (this.W === W) return;
+    H = Math.round(H ?? (W * 3) / 4);
+    if (this.W === W && this.H === H) return;
     this.W = W;
-    this.H = Math.round((W * 3) / 4);
+    this.H = H;
     this.canvas.width = this.W;
     this.canvas.height = this.H;
     this.aux.width = this.W;
     this.aux.height = this.H;
     this.body = W >= 400 ? 20 : 18;
     this.lh = this.body + 1;
-    this.pad = W >= 400 ? 20 : 14;
+    // sur un écran large, le texte garde une colonne de lecture confortable
+    this.pad = Math.max(W >= 400 ? 20 : 14, Math.round((W - 620) / 2));
     if (this.cart) this.layout();
   }
 

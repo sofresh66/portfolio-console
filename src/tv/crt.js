@@ -19,12 +19,13 @@ uniform float uPower;   // 0 = éteint, 1 = allumé
 uniform float uHigh;    // 1 = qualité haute, 0 = allégée
 uniform float uMotion;  // 0 si prefers-reduced-motion
 uniform float uRoll;    // décrochage d’image (changement de chaîne)
+uniform float uCurve;   // 1 = télé bombée, plus faible en plongée plein écran
 
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 
 vec2 curve(vec2 uv){
   uv = uv * 2.0 - 1.0;
-  vec2 o = abs(uv.yx) / vec2(5.4, 4.4);
+  vec2 o = abs(uv.yx) / vec2(5.4, 4.4) * uCurve;
   uv = uv + uv * o * o;
   return uv * 0.5 + 0.5;
 }
@@ -114,6 +115,7 @@ export class CRT {
     this.snow = 1;
     this.power = 0;
     this.roll = 0;
+    this.curve = 1;
     const opts = { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: "low-power" };
     this.gl = canvas.getContext("webgl", opts) || canvas.getContext("experimental-webgl", opts);
     if (this.gl) {
@@ -167,7 +169,7 @@ export class CRT {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     this.u = {};
-    for (const n of ["uTex", "uRes", "uSrc", "uTime", "uSnow", "uPower", "uHigh", "uMotion", "uRoll"]) this.u[n] = gl.getUniformLocation(prog, n);
+    for (const n of ["uTex", "uRes", "uSrc", "uTime", "uSnow", "uPower", "uHigh", "uMotion", "uRoll", "uCurve"]) this.u[n] = gl.getUniformLocation(prog, n);
     gl.uniform1i(this.u.uTex, 0);
   }
 
@@ -195,6 +197,7 @@ export class CRT {
       gl.uniform1f(this.u.uHigh, this.high ? 1 : 0);
       gl.uniform1f(this.u.uMotion, this.motion);
       gl.uniform1f(this.u.uRoll, this.roll);
+      gl.uniform1f(this.u.uCurve, this.curve);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       return;
     }
@@ -222,9 +225,9 @@ export class CRT {
 }
 
 /* Même déformation que curve() du shader : pixel de l’écran → coordonnées du jeu. */
-export function screenToSource(u, v) {
+export function screenToSource(u, v, curve = 1) {
   let x = u * 2 - 1, y = v * 2 - 1;
-  const ox = Math.abs(y) / 5.4, oy = Math.abs(x) / 4.4;
+  const ox = (Math.abs(y) / 5.4) * curve, oy = (Math.abs(x) / 4.4) * curve;
   x = x + x * ox * ox;
   y = y + y * oy * oy;
   return [x * 0.5 + 0.5, y * 0.5 + 0.5];

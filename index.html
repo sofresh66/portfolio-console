@@ -33,7 +33,7 @@
     <div class="intro" id="intro" role="status" aria-live="polite">
       <div class="intro-inner">
         <p class="intro-logo" aria-hidden="true"><span>NOVA</span><b>16</b></p>
-        <p class="intro-owner">L’étagère de <span data-owner></span></p>
+        <p class="intro-owner">L’étagère de <span data-owner>Denis</span></p>
         <div class="intro-bar" aria-hidden="true"><i></i></div>
         <p class="intro-msg" id="intro-msg">Allumage de la chambre…</p>
         <button type="button" class="intro-skip" id="intro-skip">Entrer</button>
@@ -79,13 +79,15 @@
           <span class="poster-tape poster-tape-l"></span><span class="poster-tape poster-tape-r"></span>
         </div>
         <div class="frame-photo"><span></span></div>
+        <div class="shade"></div>
       </div>
 
-      <div class="layer floor" data-depth="0.32" aria-hidden="true"><div class="rug"></div></div>
+      <div class="layer floor" data-depth="0.32" aria-hidden="true"><div class="rug"></div><div class="shade"></div></div>
 
       <div class="stage">
         <!-- Télé + meuble + console -->
         <section class="setup layer" data-depth="0.55" aria-label="La télé ONDINE et la console NOVA 16">
+          <div class="tv-floor" aria-hidden="true"></div>
           <div class="tv-wrap">
             <div class="antenna" aria-hidden="true"><i></i><i></i><b></b></div>
             <div class="tv" id="tv">
@@ -110,7 +112,7 @@
                 <span class="tv-brand" aria-hidden="true"><i>≈</i>ONDINE</span>
                 <span class="knob" aria-hidden="true"></span>
                 <span class="knob knob-sm" aria-hidden="true"></span>
-                <button type="button" class="zoom-btn" id="btn-zoom" aria-pressed="false" aria-label="Agrandir l’écran" title="Agrandir l’écran">
+                <button type="button" class="zoom-btn" id="btn-zoom" aria-label="Plonger dans l’écran" title="Plonger dans l’écran" disabled>
                   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="2" /></svg>
                 </button>
                 <span class="grille" aria-hidden="true"></span>
@@ -131,6 +133,7 @@
               </button>
             </div>
             <div class="compartment">
+              <span class="tv-spill" aria-hidden="true"></span>
               <div class="console" id="console">
                 <div class="seat" id="seat"></div>
                 <div class="c-top">
@@ -160,7 +163,7 @@
 
         <!-- Étagère -->
         <aside class="shelf-wrap layer" data-depth="0.7" aria-labelledby="shelf-title">
-          <h1 class="sign" id="shelf-title">L’étagère de <span data-owner></span></h1>
+          <h1 class="sign" id="shelf-title">L’étagère de <span data-owner>Denis</span></h1>
           <p class="hint" id="cart-help">Clique sur une cartouche ou glisse-la jusqu’à la console.</p>
           <ul class="shelf" id="shelf" aria-label="Cartouches"></ul>
           <p class="shelf-caption" id="shelf-caption" aria-hidden="true"></p>
@@ -184,6 +187,11 @@
     <canvas class="dust" id="dust" aria-hidden="true"></canvas>
     <div class="vignette" aria-hidden="true"></div>
     <div class="fly-layer" id="fly-layer" aria-hidden="true"></div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+    <button type="button" class="dive-exit" id="dive-exit" hidden>
+      <span aria-hidden="true">◀</span> Revenir dans la chambre
+    </button>
+    <button type="button" class="cine-skip" id="cine-skip" hidden>Passer l’intro <span aria-hidden="true">▶▶</span></button>
 
     <p class="sr-only" id="screen-help">
       Utilise les flèches pour naviguer, Entrée pour valider, Retour arrière pour revenir à l’écran titre et Échap pour éjecter la cartouche.

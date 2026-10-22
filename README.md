@@ -97,6 +97,18 @@ balises de partage (Open Graph) et à l’URL canonique.
   étoiles filantes et ville au loin, lampe de chevet (cliquable) et poussière qui flotte dans sa lumière,
   réveil à l’heure réelle.
 
+### Effets « waouw »
+
+- **Plongée dans l’écran** : dès que la télé a démarré, la caméra avance vers elle et l’écran
+  remplit toute la fenêtre (effet CRT conservé, texte agrandi). `Échap` ou « Revenir dans la
+  chambre » font le trajet inverse ; un second `Échap` éjecte la cartouche. Le bouton ⛶ de la
+  télé replonge. Avec « animations réduites » : simple fondu.
+- **Lumière de la télé** : la couleur d’accent de la cartouche éclaire le mur, le meuble et le
+  sol, avec un léger scintillement. Télé éteinte : la chambre s’assombrit, seule la lampe éclaire.
+- **Intro cinématique** (première visite) : noir, pluie, éclair, la lampe s’allume en grésillant,
+  puis la caméra glisse vers le meuble. Bouton « Passer l’intro ». Elle ne se rejoue pas ensuite
+  (mémorisé dans le navigateur) ; ajoute `?intro` à l’adresse pour la revoir.
+
 ### Performance
 
 - Mode **léger automatique** sur mobile et petites machines (et bascule automatique si l’animation
@@ -113,7 +125,7 @@ balises de partage (Open Graph) et à l’URL canonique.
 - Le contenu de chaque écran existe aussi en vrai HTML (titres, listes, liens) pour les lecteurs
   d’écran ; le focus sur un lien se reflète sur la télé.
 - `prefers-reduced-motion` respecté : pas de vols, de parallaxe, de mosaïque, ni de texte animé.
-- Bouton « Agrandir l’écran » pour lire confortablement sur téléphone.
+- Bouton « Plonger dans l’écran » (et plongée automatique) pour lire confortablement, même sur téléphone.
 
 ### Liens profonds
 

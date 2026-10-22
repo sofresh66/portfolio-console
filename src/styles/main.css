@@ -17,6 +17,7 @@
   --lamp-on: 1;
   --tv-rgb: 150, 170, 210;
   --tv-k: 0;
+  --dark: 0.75;
   --cw: 78px;
   --ch: calc(var(--cw) * 1.25);
   --pixel: "Press Start 2P", "Courier New", monospace;
@@ -102,6 +103,20 @@ button {
 .intro.done {
   clip-path: circle(0% at 50% 58%);
   pointer-events: none;
+}
+/* intro cinématique : le chargement passe au noir puis le noir s’efface */
+.intro.to-black {
+  background: #000;
+  transition: background 0.4s;
+}
+.intro.to-black .intro-inner {
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.intro.fade-out {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s ease-in;
 }
 .intro-inner {
   display: grid;
@@ -257,6 +272,7 @@ button {
 /* Fenêtre */
 .window {
   position: absolute;
+  z-index: 1; /* la nuit dehors reste visible quand la chambre est sombre */
   left: max(4vw, 40px);
   top: 9%;
   width: clamp(200px, 22vw, 340px);
@@ -516,6 +532,7 @@ button {
 }
 .bezel {
   position: relative;
+  z-index: 1;
   flex: 1;
   border-radius: 24px;
   background: linear-gradient(#17181d, #222329);
@@ -674,7 +691,8 @@ button {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(ellipse 45% 160% at 44% 0%, rgba(var(--tv-rgb), calc(0.55 * var(--tv-k))), transparent 70%);
+  background: radial-gradient(ellipse 45% 160% at 44% 0%, rgba(var(--tv-rgb), 0.6), transparent 70%);
+  opacity: var(--tv-k);
   pointer-events: none;
 }
 .compartment {
@@ -791,6 +809,7 @@ button {
 /* ---------------- Console NOVA 16 ---------------- */
 .console {
   position: relative;
+  z-index: 1;
   width: min(66%, 340px);
 }
 .seat {
@@ -971,6 +990,8 @@ button {
   }
 }
 .pad {
+  position: relative;
+  z-index: 1;
   width: 110px;
   flex: none;
   transform: rotate(-8deg) translateY(4px);
@@ -1048,7 +1069,8 @@ button {
   position: absolute;
   inset: -120px -80px -120px -420px;
   z-index: -1;
-  background: radial-gradient(closest-side at 32% 60%, rgba(var(--tv-rgb), calc(0.22 * var(--tv-k))), transparent);
+  background: radial-gradient(closest-side at 32% 60%, rgba(var(--tv-rgb), 0.24), transparent);
+  opacity: var(--tv-k);
   pointer-events: none;
 }
 .shelf-caption {
@@ -1225,46 +1247,191 @@ button {
   --lamp-on: 0;
 }
 
-/* ---------------- Mode zoom de l’écran ---------------- */
-.zoomed .room {
-  z-index: 195;
+/* ---------------- Lumière de la pièce ----------------
+   --dark : obscurité de la chambre (télé éteinte = sombre, seule la lampe éclaire).
+   --tv-k : intensité de la lumière de la télé, --tv-rgb : sa couleur (accent de la cartouche).
+   Tout varie par opacité : le scintillement ne coûte presque rien. */
+.shade {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #03030b;
+  opacity: var(--dark);
+  pointer-events: none;
+  transition: opacity 0.9s ease;
 }
-.zoomed .stage {
+.tv::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #03030b;
+  opacity: calc(var(--dark) * 0.75);
+  pointer-events: none;
+  transition: opacity 0.9s ease;
+}
+.compartment::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #03030b;
+  opacity: calc(var(--dark) * 0.6);
+  pointer-events: none;
+  transition: opacity 0.9s ease;
+}
+.cabinet-top::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #03030b;
+  opacity: calc(var(--dark) * 0.6);
+  pointer-events: none;
+  transition: opacity 0.9s ease;
+}
+.tv-floor {
+  position: absolute;
+  left: 50%;
+  bottom: -14vh;
+  width: 170%;
+  height: 34vh;
+  z-index: -1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(var(--tv-rgb), 0.42), rgba(var(--tv-rgb), 0.12) 55%, transparent);
+  opacity: var(--tv-k);
+  pointer-events: none;
+}
+.tv-spill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse 70% 90% at 50% 0%, rgba(var(--tv-rgb), 0.5), transparent 75%);
+  opacity: var(--tv-k);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.lite .tv-spill {
+  mix-blend-mode: normal;
+  opacity: calc(var(--tv-k) * 0.5);
+}
+
+/* Éclair de l’intro */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgb(214, 224, 255);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------- Caméra : plongée dans l’écran ---------------- */
+.camera-moving .room {
+  will-change: transform;
+}
+.camera-moving,
+.dived {
+  overflow: hidden;
+}
+.camera-moving .dust,
+.camera-moving .vignette,
+.dived .dust,
+.dived .vignette {
+  opacity: 0;
+}
+.dust,
+.vignette {
+  transition: opacity 0.5s;
+}
+.dived .room {
+  z-index: 195;
+  visibility: hidden;
+}
+.dived .stage {
   z-index: 10;
 }
-.zoomed .tv-wrap {
+.dived .tv-wrap {
   z-index: 50;
 }
-.zoomed .layer {
+.dived .layer {
   transform: none !important;
   will-change: auto;
 }
-.zoomed .screen {
+.dived .screen {
   position: fixed;
-  inset: auto;
-  top: 50%;
-  left: 50%;
+  inset: 0;
   z-index: 200;
-  width: min(96vw, calc(92svh * 4 / 3));
-  aspect-ratio: 4 / 3;
-  transform: translate(-50%, -50%);
-  border-radius: 3vmin / 4vmin;
-  /* le voile sombre autour de l’écran agrandi */
-  box-shadow: 0 0 0 10px #17181d, 0 0 80px rgba(var(--tv-rgb), 0.4), 0 0 0 200vmax rgba(2, 2, 8, 0.9);
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  visibility: visible;
+  border-radius: 0;
+  box-shadow: none;
 }
-.zoomed .zoom-btn {
+.dived .screen:focus-visible,
+.dived .screen:has(.screen-a11y :focus-visible) {
+  box-shadow: inset 0 0 0 4px var(--focus);
+}
+.dive-exit {
   position: fixed;
-  z-index: 210;
-  top: max(14px, env(safe-area-inset-top));
-  left: max(14px, env(safe-area-inset-left));
-  width: auto;
-  padding: 0 12px;
+  z-index: 310;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  grid-auto-flow: column;
-}
-.zoomed .zoom-btn::after {
-  content: "Fermer";
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  background: rgba(6, 8, 24, 0.82);
+  color: #fff;
   font-size: 19px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.4s ease-out;
+}
+.dive-exit:hover {
+  border-color: var(--focus);
+}
+.cine-skip {
+  position: fixed;
+  z-index: 1100;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  min-height: 44px;
+  padding: 8px 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  background: rgba(6, 8, 24, 0.7);
+  color: #fff;
+  font-family: var(--pixel);
+  font-size: 10px;
+  cursor: pointer;
+  animation: fadeIn 0.6s ease-out 0.4s both;
+}
+.dive-exit[hidden],
+.cine-skip[hidden] {
+  display: none;
+}
+.zoom-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.cine-skip:hover {
+  border-color: var(--focus);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes diveFade {
+  from {
+    opacity: 0;
+  }
 }
 
 /* ---------------- Mode allégé ---------------- */
@@ -1466,5 +1633,9 @@ button {
   .intro.done {
     clip-path: none;
     opacity: 0;
+  }
+  /* plongée : un simple fondu, sans zoom */
+  .dived .screen {
+    animation: diveFade 0.45s ease-out !important;
   }
 }

@@ -13,6 +13,8 @@ import { initialQuality, storeQuality, fpsProbe, weakDevice } from "./scene/qual
 import { Gamepads } from "./input/gamepad.js";
 import { buildShelf, enableDrag, tiltOnHover } from "./carts/shelf.js";
 import { CartMover, frames } from "./carts/flight.js";
+import { Camera } from "./scene/camera.js";
+import { hexToRgb } from "./tv/pixel.js";
 
 const $ = (s) => document.querySelector(s);
 const root = document.documentElement;
@@ -39,6 +41,9 @@ const el = {
   soundBtn: $("#btn-sound"),
   qualityBtn: $("#btn-quality"),
   zoomBtn: $("#btn-zoom"),
+  diveExit: $("#dive-exit"),
+  flash: $("#flash"),
+  cineSkip: $("#cine-skip"),
   lamp: $("#lamp"),
   clock: $("#clock"),
 };
@@ -102,6 +107,11 @@ const screen = new GameScreen({
   onLink: (s) => openLink(s.href),
   onState: (state) => {
     if (state === "title" && current) sound.playMusic(musicFor(current));
+    // la télé a démarré : la caméra plonge dans l’écran
+    if (state === "title" && current && autoDive) {
+      autoDive = false;
+      enterDive();
+    }
     el.screen.classList.toggle("scrollable", state === "content" && screen.maxScroll > 0);
   },
 });
@@ -270,7 +280,9 @@ async function insert(id, ghost = null) {
   });
 
   current = cart;
+  autoDive = true;
   el.eject.disabled = false;
+  el.zoomBtn.disabled = false;
   buildMirror(cart);
   el.screen.setAttribute("aria-label", `Écran de la télé ONDINE : ${cart.title}`);
   setHash(cart.id);
@@ -310,10 +322,15 @@ async function eject() {
 }
 
 async function doEject(backToSnow) {
+  autoDive = false;
+  if (dive !== "room") {
+    await diveJob;
+    await exitDive();
+  }
   const cart = current;
   current = null;
   el.eject.disabled = true;
-  if (zoomed) setZoom(false);
+  el.zoomBtn.disabled = true;
   sound.stopMusic();
   sound.powerOff();
   await frames(reduce ? 0 : 380, (k) => (crt.power = 1 - k));
@@ -355,8 +372,10 @@ el.screen.addEventListener("keydown", (e) => {
 
 addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (zoomed) setZoom(false);
-    else eject();
+    // 1er appui : on ressort de l’écran ; 2e appui : on éjecte
+    if (cinematic) skipCinematic();
+    else if (dive === "dived") exitDive();
+    else if (dive === "room") eject();
     return;
   }
   if (e.target.closest && e.target.closest("input, textarea, select")) return;
@@ -377,7 +396,7 @@ addEventListener("keydown", (e) => {
 
 function toSource(e) {
   const r = el.screen.getBoundingClientRect();
-  const [u, v] = screenToSource((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  const [u, v] = screenToSource((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, crt.curve);
   return [u * screen.W, v * screen.H];
 }
 let drag = null;
@@ -433,27 +452,69 @@ const pads = new Gamepads((action) => {
   else if (i < 0) list[0]?.focus();
 });
 
-/* ---------------- Zoom de l’écran ---------------- */
-let zoomed = false;
-function setZoom(on) {
-  zoomed = on;
-  document.body.classList.toggle("zoomed", on);
-  el.zoomBtn.setAttribute("aria-pressed", String(on));
-  el.zoomBtn.setAttribute("aria-label", on ? "Fermer l’écran agrandi" : "Agrandir l’écran");
-  requestAnimationFrame(sizeAll);
-  if (on) el.screen.focus({ preventScroll: true });
+/* ---------------- Plongée dans l’écran ----------------
+   La caméra avance vers la télé jusqu’à ce que l’écran couvre la fenêtre,
+   puis l’écran passe en vrai plein écran (net, à la résolution de la fenêtre).
+   Échap ou « Revenir dans la chambre » font le trajet inverse. */
+const camera = new Camera(el.room);
+let dive = "room"; // room → in → dived → out → room
+let diveJob = Promise.resolve();
+let autoDive = false;
+
+function setDived(on) {
+  document.body.classList.toggle("dived", on);
+  el.diveExit.hidden = !on;
+  crt.curve = on ? 0.55 : 1;
+  sizeAll();
 }
-el.zoomBtn.addEventListener("click", () => setZoom(!zoomed));
-// clic en dehors de l’écran agrandi : on referme
-addEventListener("click", (e) => {
-  if (zoomed && !el.screen.contains(e.target) && !el.zoomBtn.contains(e.target)) setZoom(false);
-});
+
+function enterDive() {
+  if (dive !== "room" || !current || cinematic) return diveJob;
+  dive = "in";
+  diveJob = (async () => {
+    sound.dive();
+    if (!reduce) {
+      document.body.classList.add("camera-moving");
+      await camera.move(camera.frame(el.screen.getBoundingClientRect()), 1200);
+      // même image : la chambre agrandie est remplacée par l’écran plein écran
+      camera.move(null, 0);
+      document.body.classList.remove("camera-moving");
+    }
+    setDived(true);
+    if (!reduce) frames(420, (k) => (crt.roll = Math.sin(k * Math.PI) * 0.3)).then(() => (crt.roll = 0));
+    if (lastInput !== "pointer") el.screen.focus({ preventScroll: true });
+    say("Plongée dans l’écran. Échap pour revenir dans la chambre.");
+    dive = "dived";
+  })();
+  return diveJob;
+}
+
+function exitDive() {
+  if (dive !== "dived") return diveJob;
+  dive = "out";
+  diveJob = (async () => {
+    sound.surface();
+    setDived(false);
+    if (!reduce) {
+      document.body.classList.add("camera-moving");
+      await camera.move(camera.frame(el.screen.getBoundingClientRect()), 0);
+      await camera.move(null, 1000);
+      document.body.classList.remove("camera-moving");
+    }
+    if (lastInput !== "pointer") el.zoomBtn.focus({ preventScroll: true });
+    dive = "room";
+  })();
+  return diveJob;
+}
+
+el.zoomBtn.addEventListener("click", () => enterDive());
+el.diveExit.addEventListener("click", () => exitDive());
 
 /* ---------------- Lampe & réveil ---------------- */
 el.lamp.addEventListener("click", () => {
+  if (cinematic) return;
   const on = el.lamp.getAttribute("aria-pressed") !== "true";
-  el.lamp.setAttribute("aria-pressed", String(on));
-  el.room.classList.toggle("lamp-off", !on);
+  setLamp(on);
   sound.tone({ type: "square", freq: on ? 1800 : 1200, dur: 0.03, vol: 0.08 });
   sound.noise({ dur: 0.03, vol: 0.2, freq: 3000 });
 });
@@ -474,11 +535,17 @@ const dust = new Dust($("#dust"), { count: quality.lite ? 0 : 70, reduceMotion: 
 if (touch && !reduce) addEventListener("touchend", () => parallax.enableTilt(), { once: true });
 
 function sizeAll() {
-  const r = el.screen.getBoundingClientRect();
-  if (!r.width) return;
-  screen.setSize(r.width < 440 ? 320 : 400);
-  const dpr = Math.min(window.devicePixelRatio || 1, quality.lite ? 1 : 2);
-  crt.resize(r.width, r.height, dpr);
+  // tailles de mise en page (insensibles au zoom de la caméra)
+  const w = el.screen.offsetWidth, h = el.screen.offsetHeight;
+  if (!w) return;
+  const dived = document.body.classList.contains("dived");
+  if (dived) {
+    // plein écran : 1 pixel du jeu ≈ 1,2 à 2,4 pixels CSS, texte bien lisible
+    const s = Math.max(1, Math.min(Math.max(1.2, innerHeight / 560), innerWidth / 320));
+    screen.setSize(innerWidth / s, innerHeight / s);
+  } else screen.setSize(w < 440 ? 320 : 400);
+  const dpr = Math.min(window.devicePixelRatio || 1, quality.lite ? 1 : dived ? 1.5 : 2);
+  crt.resize(w, h, dpr);
   sky.resize();
   dust.resize();
   measureLights();
@@ -498,35 +565,45 @@ function measureLights() {
   tvPos = { x: s.left + s.width / 2, y: s.top + s.height / 2, w: s.width };
 }
 
-/* Couleur moyenne de l’écran → lumière projetée dans la pièce. */
+/* Lumière de la télé : la couleur d’accent de la cartouche, une intensité qui
+   suit la luminosité de l’image, et un léger scintillement. Télé éteinte : la
+   chambre s’assombrit et seule la lampe éclaire (--dark). */
+const SNOW_RGB = [150, 168, 210];
 const probe = document.createElement("canvas");
 probe.width = 8;
 probe.height = 6;
 const probeCtx = probe.getContext("2d", { willReadFrequently: true });
-let tvColor = [150, 170, 210], tvLevel = 0, sampleAcc = 0;
+let tvColor = SNOW_RGB, tvLevel = 0, screenLum = 0.5, sampleAcc = 0;
+let darkOverride = null, lastDark = "", lastRgb = "";
 function sampleScreen() {
-  if (crt.snow > 0.5 || !current) {
-    tvColor = [150, 168, 210];
-    tvLevel = 0.55 * crt.power;
+  if (!current || crt.snow > 0.5) {
+    tvColor = SNOW_RGB;
+    screenLum = 0.5;
     return;
   }
+  tvColor = hexToRgb(current.palette.accent);
   probeCtx.drawImage(screen.canvas, 0, 0, 8, 6);
   const d = probeCtx.getImageData(0, 0, 8, 6).data;
-  let r = 0, g = 0, b = 0;
-  for (let i = 0; i < d.length; i += 4) {
-    r += d[i];
-    g += d[i + 1];
-    b += d[i + 2];
-  }
-  const n = d.length / 4;
-  r /= n;
-  g /= n;
-  b /= n;
-  const lum = (0.3 * r + 0.59 * g + 0.11 * b) / 255;
-  // on sature un peu pour que la couleur de la cartouche se lise sur les murs
-  const max = Math.max(r, g, b, 1);
-  tvColor = [r, g, b].map((v) => Math.round((v / max) * 235));
-  tvLevel = Math.min(1, 0.45 + lum * 1.4) * crt.power;
+  let sum = 0;
+  for (let i = 0; i < d.length; i += 4) sum += 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2];
+  screenLum = sum / (d.length / 4) / 255;
+}
+
+function updateLight(t) {
+  const snow = !current || crt.snow > 0.5;
+  const base = snow ? 0.4 : 0.6 + screenLum * 0.7;
+  // scintillement : ondulation lente + petites chutes brèves comme un vrai tube
+  const flicker = reduce ? 1 : 0.94 + 0.06 * Math.sin(t * 13.7) * Math.sin(t * 7.3) - (Math.random() < 0.04 ? 0.1 : 0);
+  tvLevel = Math.min(1, base * crt.power * flicker);
+  root.style.setProperty("--tv-k", tvLevel.toFixed(3));
+  const rgb = tvColor.join(",");
+  if (rgb !== lastRgb) root.style.setProperty("--tv-rgb", (lastRgb = rgb));
+  const lampOff = el.room.classList.contains("lamp-off");
+  let dark = crt.power < 0.05 ? 0.72 : snow ? 0.5 : 0.28;
+  if (lampOff) dark += 0.12;
+  if (darkOverride != null) dark = darkOverride;
+  const v = dark.toFixed(2);
+  if (v !== lastDark) root.style.setProperty("--dark", (lastDark = v));
 }
 
 /* ---------------- Boucle principale ---------------- */
@@ -547,7 +624,7 @@ function frame(now) {
   last = now;
   time += dt;
   slowProbe(raw);
-  if (!zoomed) parallax.update(dt);
+  if (dive === "room" && !document.body.classList.contains("camera-moving")) parallax.update(dt);
   pads.poll();
   sky.update(dt);
 
@@ -565,9 +642,7 @@ function frame(now) {
   lightAcc += dt;
   if (lightAcc > 1 / 30) {
     lightAcc = 0;
-    const flicker = reduce ? 1 : 0.9 + Math.random() * 0.1;
-    root.style.setProperty("--tv-rgb", tvColor.join(","));
-    root.style.setProperty("--tv-k", (tvLevel * flicker).toFixed(3));
+    updateLight(time);
   }
   measureAcc += dt;
   if (measureAcc > 0.5) {
@@ -583,6 +658,97 @@ function frame(now) {
     dust.update(dt, time);
   }
   requestAnimationFrame(frame);
+}
+
+/* ---------------- Intro cinématique ----------------
+   Première visite : noir, pluie, un éclair, la lampe s’allume en grésillant,
+   puis la caméra glisse de la fenêtre vers le meuble. Ne se rejoue pas ensuite. */
+const INTRO_KEY = "nova16-intro-vue";
+let cinematic = false;
+let skipCinematic = () => {};
+function introSeen() {
+  if (new URLSearchParams(location.search).has("intro")) return false; // ?intro : la rejouer
+  try {
+    return localStorage.getItem(INTRO_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+
+function setLamp(on) {
+  el.lamp.setAttribute("aria-pressed", String(on));
+  el.room.classList.toggle("lamp-off", !on);
+}
+
+function lightningFlash() {
+  sky.lightning();
+  el.flash.animate(
+    [{ opacity: 0 }, { opacity: 0.7, offset: 0.06 }, { opacity: 0.08, offset: 0.22 }, { opacity: 0.45, offset: 0.32 }, { opacity: 0 }],
+    { duration: 750, easing: "ease-out" }
+  );
+  setTimeout(() => sound.thunder(), 380);
+}
+
+async function playCinematic(revealRoom) {
+  cinematic = true;
+  busy = true;
+  let skipped = false, onSkip;
+  const skip = new Promise((r) => (onSkip = r));
+  skipCinematic = () => {
+    skipped = true;
+    onSkip();
+  };
+  // attend `ms`, ou moins si on passe l’intro
+  const beat = (ms) => Promise.race([new Promise((r) => setTimeout(r, ms)), skip]);
+
+  setLamp(false);
+  darkOverride = 0.9;
+  sky.rain = sky.rainTarget = 1;
+  sound.setRain(true);
+  document.body.classList.add("camera-moving");
+  const win = document.querySelector(".window").getBoundingClientRect();
+  const k = Math.max(1.3, Math.min(2.4, Math.min(innerWidth / win.width, innerHeight / win.height) * 0.7));
+  await camera.move(camera.frame(win, { scale: k, contain: true }), 0);
+  el.cineSkip.hidden = false;
+  el.cineSkip.onclick = () => skipCinematic();
+  revealRoom();
+
+  await beat(1500);
+  if (!skipped) {
+    lightningFlash();
+    darkOverride = 0.82;
+  }
+  await beat(1500);
+  // la lampe grésille avant de tenir
+  for (const [ms, on] of [[90, 1], [70, 0], [150, 1], [240, 0], [60, 1], [110, 0], [0, 1]]) {
+    if (skipped) break;
+    setLamp(!!on);
+    if (on) sound.crackle();
+    await beat(ms);
+  }
+  setLamp(true);
+  if (!skipped) {
+    darkOverride = null;
+    await beat(350);
+  }
+  // la caméra glisse jusqu’au meuble
+  if (!skipped) await Promise.race([camera.move(null, 2400, "cubic-bezier(0.45, 0, 0.2, 1)"), skip]);
+  camera.move(null, 0);
+  document.body.classList.remove("camera-moving");
+  darkOverride = null;
+  el.cineSkip.hidden = true;
+  try {
+    localStorage.setItem(INTRO_KEY, "1");
+  } catch {}
+  // l’orage s’éloigne doucement
+  setTimeout(() => {
+    sky.rainTarget = 0;
+    sound.setRain(false);
+  }, skipped ? 1500 : 7000);
+  cinematic = false;
+  busy = false;
+  skipCinematic = () => {};
+  await tvToSnow();
 }
 
 /* ---------------- Démarrage ---------------- */
@@ -618,15 +784,29 @@ async function boot() {
   applyQuality();
   sizeAll();
   requestAnimationFrame(frame);
+  const id = decodeURIComponent(location.hash.slice(1));
+  const finishLoading = () => {
+    document.body.classList.remove("is-loading");
+    setTimeout(() => el.intro.remove(), 1600);
+  };
+
+  // un lien profond ouvre directement sa cartouche : pas d’intro dans ce cas
+  if (!reduce && !buttons.has(id) && !introSeen()) {
+    await playCinematic(() => {
+      // le chargement s’efface vers le noir, puis le noir laisse voir la chambre
+      el.intro.classList.add("to-black");
+      setTimeout(() => el.intro.classList.add("fade-out"), 420);
+      finishLoading();
+    });
+    return;
+  }
   await new Promise((r) => setTimeout(r, reduce ? 50 : 250));
   el.intro.classList.add("done");
-  document.body.classList.remove("is-loading");
-  setTimeout(() => el.intro.remove(), 1200);
+  finishLoading();
   await new Promise((r) => setTimeout(r, reduce ? 0 : 500));
   await tvToSnow();
-  const id = decodeURIComponent(location.hash.slice(1));
   if (buttons.has(id)) insert(id);
 }
 boot();
 
-if (import.meta.env.DEV) window.__nova = { screen, crt, mover, sound, parallax };
+if (import.meta.env.DEV) window.__nova = { screen, crt, mover, sound, parallax, camera, sky, get dive() { return dive; }, get cinematic() { return cinematic; } };

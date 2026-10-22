@@ -1,5 +1,6 @@
 /* Ciel nocturne pixel art derrière la fenêtre : étoiles qui scintillent,
-   lune, nuages lents, étoiles filantes et ville au loin. */
+   lune, nuages lents, étoiles filantes, ville au loin, et pour l’intro :
+   pluie (rain 0 → 1) et éclairs (lightning()). */
 
 const PX = 3; // un pixel du ciel = 3 pixels CSS
 
@@ -13,6 +14,11 @@ export class Sky {
     this.shoot = null;
     this.nextShoot = 4;
     this.t = 0;
+    this.rain = 0;
+    this.rainTarget = 0;
+    this.flash = 0;
+    this.bolt = null;
+    this.drops = [];
     this.resize();
   }
 
@@ -43,9 +49,27 @@ export class Sky {
     this.draw();
   }
 
+  /* Un éclair : flash du ciel et zigzag lumineux. */
+  lightning() {
+    this.flash = 1;
+    let x = this.w * (0.25 + Math.random() * 0.5), y = 0;
+    const pts = [[x, y]];
+    while (y < this.h * 0.75) {
+      y += 2 + Math.random() * 4;
+      x += Math.round((Math.random() - 0.5) * 6);
+      pts.push([x, y]);
+    }
+    this.bolt = pts;
+    this.draw();
+  }
+
   update(dt) {
     this.t += dt;
     this.acc += dt;
+    // la pluie arrive vite et s’en va doucement (l’orage passe)
+    const rate = this.rainTarget > this.rain ? 1.5 : 0.06;
+    this.rain += Math.sign(this.rainTarget - this.rain) * Math.min(Math.abs(this.rainTarget - this.rain), rate * dt);
+    this.flash = Math.max(0, this.flash - dt * 2.5);
     const step = this.lite ? 1 / 12 : 1 / 30;
     if (this.acc < step) return;
     this.acc = 0;
@@ -60,6 +84,7 @@ export class Sky {
         if (this.shoot.life > 0.9) this.shoot = null;
       }
     }
+    if (this.rain > 0.01 || this.drops.length) this.moveRain(step);
     this.draw();
   }
 
@@ -112,6 +137,22 @@ export class Sky {
       }
       ctx.globalAlpha = 1;
     }
+    // voile d’orage, pluie et éclair
+    if (this.rain > 0.01) {
+      ctx.fillStyle = `rgba(14,16,34,${(0.6 * this.rain).toFixed(3)})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+    if (this.flash > 0) {
+      ctx.fillStyle = `rgba(205,215,255,${(this.flash * 0.75).toFixed(3)})`;
+      ctx.fillRect(0, 0, w, h);
+      if (this.bolt && this.flash > 0.45) {
+        ctx.fillStyle = "#ffffff";
+        for (let i = 1; i < this.bolt.length; i++) {
+          const [x0, y0] = this.bolt[i - 1], [x1, y1] = this.bolt[i];
+          for (let yy = y0; yy <= y1; yy++) ctx.fillRect(Math.round(x0 + ((x1 - x0) * (yy - y0)) / Math.max(1, y1 - y0)), Math.round(yy), 1, 1);
+        }
+      }
+    }
     // ville
     for (const b of this.city) {
       ctx.fillStyle = "#0b0d22";
@@ -122,6 +163,24 @@ export class Sky {
         if (!on) continue;
         ctx.fillStyle = ph > 0.8 ? "#9fd3ff" : "#ffcf6e";
         ctx.fillRect(b.x + xx, h - b.h + yy, 1, 1);
+      }
+    }
+    if (this.drops.length) {
+      ctx.fillStyle = "rgba(170,190,255,.55)";
+      for (const d of this.drops) ctx.fillRect(Math.round(d.x), Math.round(d.y), 1, d.len);
+    }
+  }
+
+  moveRain(step) {
+    const want = Math.round((this.w * this.h) / 40 * this.rain);
+    while (this.drops.length < want) this.drops.push({ x: Math.random() * this.w, y: Math.random() * -this.h, len: 2 + ((Math.random() * 3) | 0), v: 90 + Math.random() * 60 });
+    if (this.drops.length > want) this.drops.length = want;
+    for (const d of this.drops) {
+      d.y += d.v * step;
+      d.x -= d.v * step * 0.15;
+      if (d.y > this.h) {
+        d.y = -d.len;
+        d.x = Math.random() * (this.w + 10);
       }
     }
   }

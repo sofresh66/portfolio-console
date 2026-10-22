@@ -44,7 +44,8 @@ export class Sound {
       this.noiseBuf = this.makeNoise();
       this.pulse = this.makePulse(0.125);
     }
-    if (this.ctx.state === "suspended") this.ctx.resume();
+    if (this.ctx.state === "suspended") this.ctx.resume().then(() => this.rainWanted && this.setRain(true));
+    else if (this.rainWanted) this.setRain(true);
   }
 
   setEnabled(on) {
@@ -191,6 +192,57 @@ export class Sound {
   }
   hiss(dur = 1.4) {
     this.noise({ dur, vol: 0.05, freq: 6000, q: 0.3, type: "highpass" });
+  }
+  dive() {
+    if (!this.ready) return;
+    this.whoosh();
+    this.tone({ type: "sine", freq: 180, to: 900, dur: 1.1, vol: 0.06 });
+    this.tone({ type: "triangle", freq: 90, to: 360, dur: 1.2, vol: 0.08, at: 0.05 });
+  }
+  surface() {
+    this.whoosh();
+    this.tone({ type: "sine", freq: 900, to: 160, dur: 0.9, vol: 0.05 });
+  }
+  thunder() {
+    this.noise({ dur: 2.6, vol: 0.5, freq: 140, q: 0.7, type: "lowpass" });
+    this.noise({ dur: 0.5, vol: 0.25, freq: 900, q: 0.8, type: "lowpass", at: 0.05 });
+    this.tone({ type: "sine", freq: 55, to: 38, dur: 2.2, vol: 0.25, at: 0.1 });
+  }
+  crackle() {
+    this.noise({ dur: 0.03 + Math.random() * 0.04, vol: 0.25, freq: 2500 + Math.random() * 2000, q: 3 });
+    this.tone({ type: "sawtooth", freq: 100, dur: 0.06, vol: 0.03 });
+  }
+
+  /* Pluie en boucle. Mémorisée comme souhait : elle démarre dès que l’audio
+     est débloqué si la pluie tombe encore. */
+  setRain(on) {
+    this.rainWanted = on;
+    if (on && !this.rainNode && this.ready) {
+      const t = this.ctx.currentTime;
+      const s = this.ctx.createBufferSource();
+      s.buffer = this.noiseBuf;
+      s.loop = true;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 2600;
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 400;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.09, t + 1.2);
+      s.connect(lp).connect(hp).connect(g).connect(this.sfxBus);
+      s.start();
+      this.rainNode = { s, g };
+    } else if (!on && this.rainNode) {
+      const { s, g } = this.rainNode;
+      this.rainNode = null;
+      const t = this.ctx.currentTime;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
+      s.stop(t + 6.1);
+    }
   }
 
   /* ---------- musique chiptune ---------- */
