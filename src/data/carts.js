@@ -42,7 +42,7 @@ export const CARTS = [
       { type: "title", text: "Qui je suis" },
       {
         type: "hero",
-        text: "Salut, moi c’est [Ton prénom]. J’habite à [ta ville] et je fabrique des sites, des petits jeux et tout ce qui me passe par la tête.",
+        text: "Moi, c’est Denis 👋 Curieux et passionné de technologie, je crée des sites web et des applications avec l’aide de l’intelligence artificielle. J’apprends en construisant, en testant et en donnant vie à mes idées. Mes projets s’inspirent de mon quotidien, de ma famille et de mon envie de créer des choses utiles… ou simplement amusantes !",
       },
       { type: "heading", text: "Fiche du personnage" },
       {

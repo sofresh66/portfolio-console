@@ -217,7 +217,8 @@ export const AVATAR_SIZE = [12, 14];
 
 /* ---------------- Texte ---------------- */
 export function wrapText(ctx, text, maxW) {
-  const words = text.split(/\s+/);
+  // les espaces insécables (avant « ! ? : ») ne coupent pas la ligne
+  const words = text.split(/[ \t\n]+/);
   const lines = [];
   let cur = "";
   for (const w of words) {
